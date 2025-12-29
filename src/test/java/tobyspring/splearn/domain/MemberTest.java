@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class MemberTest {
     Member member;
@@ -23,7 +24,9 @@ class MemberTest {
             }
         };
 
-        member = Member.create("toby@splearn.app", "Toby", "secret", passwordEncoder);
+        member = Member.create(
+                new MemberCreateRequest("toby@splearn.app", "Toby", "secret"),
+                passwordEncoder);
     }
 
     @Test
@@ -95,5 +98,28 @@ class MemberTest {
 
         //then
         assertThat(member.verifyPassword("verysecret", passwordEncoder)).isTrue();
+    }
+
+    @Test
+    void isActive() {
+        //given
+        assertThat(member.isActive()).isFalse();
+        //when
+        member.activate();
+        //then
+        assertThat(member.isActive()).isTrue();
+
+        member.deactivate();
+        assertThat(member.isActive()).isFalse();
+
+    }
+    
+    @Test
+    void invalidEmail() {
+        assertThatThrownBy(() -> {
+            Member.create(new MemberCreateRequest("invalid email", "Toby", "secret"), passwordEncoder);
+        }).isInstanceOf(IllegalArgumentException.class);
+
+        Member.create(new MemberCreateRequest("imkeunho@naver.com", "Toby", "secret"), passwordEncoder);
     }
 }
