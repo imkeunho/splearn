@@ -7,10 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import tobyspring.splearn.SplearnTestConfiguration;
-import tobyspring.splearn.domain.Member;
-import tobyspring.splearn.domain.MemberFixture;
-import tobyspring.splearn.domain.MemberRegisterRequest;
-import tobyspring.splearn.domain.MemberStatus;
+import tobyspring.splearn.domain.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -33,14 +30,14 @@ record MemberRegisterTest(MemberRegister memberRegister, EntityManager entityMan
 
     @Test
     void duplicateEmailFail() {
-//        //given
-//        Member member = memberRegister.register(MemberFixture.createMemberRegisterRequest());
-//
-//        assertThatThrownBy(() -> memberRegister.register(MemberFixture.createMemberRegisterRequest()))
-//            .isInstanceOf(DuplicateEmailException.class);
-//        //when
-//
-//        //then
+        //given
+        Member member = memberRegister.register(MemberFixture.createMemberRegisterRequest());
+
+        assertThatThrownBy(() -> memberRegister.register(MemberFixture.createMemberRegisterRequest()))
+            .isInstanceOf(DuplicateEmailException.class);
+        //when
+
+        //then
     }
     
     @Test
