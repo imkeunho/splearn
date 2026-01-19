@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Import;
 import tobyspring.splearn.SplearnTestConfiguration;
 import tobyspring.splearn.domain.member.*;
 
+import static org.assertj.core.api.Assertions.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -45,17 +46,38 @@ record MemberRegisterTest(MemberRegister memberRegister, EntityManager entityMan
     @Test
     void activate() {
         //given
-        Member member = memberRegister.register(MemberFixture.createMemberRegisterRequest());
-        entityManager.flush();
-        entityManager.clear();
+        Member member = registerMember();
         //when
         member = memberRegister.activate(member.getId());
         entityManager.flush();
         //then
         assertThat(member.getStatus()).isEqualTo(MemberStatus.ACTIVE);
-        
+        assertThat(member.getDetail().getActivatedAt()).isNotNull();
+
     }
-    
+
+    @Test
+    void deactivate() {
+        //given
+        Member member = registerMember();
+        //when
+        memberRegister.activate(member.getId());
+        entityManager.flush();
+        entityManager.clear();
+        //then
+        member = memberRegister.deactivate(member.getId());
+        assertThat(member.getStatus()).isEqualTo(MemberStatus.DEACTIVATED);
+        assertThat(member.getDetail().getDeactivatedAt()).isNotNull();
+
+    }
+
+    private Member registerMember() {
+        Member member = memberRegister.register(MemberFixture.createMemberRegisterRequest());
+        entityManager.flush();
+        entityManager.clear();
+        return member;
+    }
+
     @Test
     void memberRegisterRequestFail() {
         //given
@@ -65,6 +87,22 @@ record MemberRegisterTest(MemberRegister memberRegister, EntityManager entityMan
         //when
         //then
         
+    }
+
+    @Test
+    void updateInfo() {
+        //given
+        Member member = registerMember();
+        //when
+        member.activate();
+        entityManager.flush();
+        entityManager.clear();
+
+        //then
+        member = memberRegister.updateInfo(member.getId(), new MemberInfoUpdateRequest("imkeunho", "kekek", "자기소개"));
+        assertThat(member.getNickname()).isEqualTo("imkeunho");
+        assertThat(member.getDetail().getProfile().address()).isEqualTo("kekek");
+        assertThat(member.getDetail().getIntroduction()).isEqualTo("자기소개");
     }
 
     private void checkValidation(MemberRegisterRequest invalid) {
