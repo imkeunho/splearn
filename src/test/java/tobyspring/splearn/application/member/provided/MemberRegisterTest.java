@@ -12,6 +12,7 @@ import tobyspring.splearn.domain.member.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
 @Transactional
@@ -78,6 +79,13 @@ record MemberRegisterTest(MemberRegister memberRegister, EntityManager entityMan
         return member;
     }
 
+    private Member registerMember(String email) {
+        Member member = memberRegister.register(MemberFixture.createMemberRegisterRequest(email));
+        entityManager.flush();
+        entityManager.clear();
+        return member;
+    }
+
     @Test
     void memberRegisterRequestFail() {
         //given
@@ -94,7 +102,7 @@ record MemberRegisterTest(MemberRegister memberRegister, EntityManager entityMan
         //given
         Member member = registerMember();
         //when
-        member.activate();
+        memberRegister.activate(member.getId());
         entityManager.flush();
         entityManager.clear();
 
@@ -103,6 +111,32 @@ record MemberRegisterTest(MemberRegister memberRegister, EntityManager entityMan
         assertThat(member.getNickname()).isEqualTo("imkeunho");
         assertThat(member.getDetail().getProfile().address()).isEqualTo("kekek");
         assertThat(member.getDetail().getIntroduction()).isEqualTo("자기소개");
+    }
+
+    @Test
+    void updateInfoFail() {
+        //given
+        Member member = registerMember();
+        memberRegister.activate(member.getId());
+        memberRegister.updateInfo(member.getId(), new MemberInfoUpdateRequest("imkeunxho", "test", "자기소개"));
+
+        Member member2 = registerMember("imkenho@naver.com");
+        memberRegister.activate(member2.getId());
+        entityManager.flush();
+        entityManager.clear();
+
+        //then
+        assertThatThrownBy(() -> {
+            memberRegister.updateInfo(member2.getId(), new MemberInfoUpdateRequest("asddsa", "test", "자기소개"));
+        }).isInstanceOf(DuplicateProfileException.class);
+
+        memberRegister.updateInfo(member2.getId(), new MemberInfoUpdateRequest("asddsa", "test11", "자기소개"));
+        memberRegister.updateInfo(member.getId(), new MemberInfoUpdateRequest("asddsa", "", "자기소개"));
+
+        assertThatThrownBy(() -> {
+            memberRegister.updateInfo(member.getId(), new MemberInfoUpdateRequest("asddsa", "test11", "자기소개"));
+        }).isInstanceOf(DuplicateProfileException.class);
+
     }
 
     private void checkValidation(MemberRegisterRequest invalid) {

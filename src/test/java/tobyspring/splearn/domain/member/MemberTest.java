@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tobyspring.splearn.domain.member.MemberFixture.createMemberRegisterRequest;
 import static tobyspring.splearn.domain.member.MemberFixture.createPasswordEncoder;
 
@@ -76,16 +77,6 @@ class MemberTest {
     }
 
     @Test
-    void changeNickname() {
-        //given
-        assertThat(member.getNickname()).isEqualTo("imkeunho");
-        //when
-        member.changeNickname("charlie");
-        //then
-        assertThat(member.getNickname()).isEqualTo("charlie");
-    }
-
-    @Test
     void changePassword() {
         //given
         member.changePassword("verysecret1", passwordEncoder);
@@ -119,7 +110,7 @@ class MemberTest {
     }
 
     @Test
-    void updateMember() {
+    void updateInfo() {
         //given
         member.activate();
         //when
@@ -129,5 +120,18 @@ class MemberTest {
         assertThat(member.getNickname()).isEqualTo(request.nickname());
         assertThat(member.getDetail().getProfile().address()).isEqualTo(request.profileAddress());
         assertThat(member.getDetail().getIntroduction()).isEqualTo(request.introduction());
+    }
+
+    @Test
+    void updateInfoFail() {
+        //given
+        assertThatThrownBy(() -> {
+            var request = new MemberInfoUpdateRequest("llll", "kekek", "자기소개");
+            member.updateInfo(request);
+        }).isInstanceOf(IllegalStateException.class);
+        //when
+
+        //then
+
     }
 }
