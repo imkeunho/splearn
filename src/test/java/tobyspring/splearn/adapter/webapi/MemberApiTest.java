@@ -1,18 +1,13 @@
 package tobyspring.splearn.adapter.webapi;
 
 import lombok.RequiredArgsConstructor;
-import org.assertj.core.api.AssertProvider;
-import org.assertj.core.api.Assertions;
-import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.test.json.JsonPathValueAssert;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.assertj.MvcTestResult;
-import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.transaction.annotation.Transactional;
 import tobyspring.splearn.adapter.webapi.dto.MemberRegisterResponse;
 import tobyspring.splearn.application.member.provided.MemberRegister;
@@ -24,9 +19,7 @@ import tobyspring.splearn.domain.member.MemberStatus;
 import tools.jackson.databind.ObjectMapper;
 
 import java.io.UnsupportedEncodingException;
-import java.util.function.Consumer;
 
-import static org.assertj.core.api.Assertions.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
 import static tobyspring.splearn.AssertThatUtils.equalsTo;

@@ -7,9 +7,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import tobyspring.splearn.SplearnTestConfiguration;
+import tobyspring.splearn.domain.member.MemberRegisterRequest;
 import tobyspring.splearn.domain.member.*;
 
-import static org.assertj.core.api.Assertions.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
