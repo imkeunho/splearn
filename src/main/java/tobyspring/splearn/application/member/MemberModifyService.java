@@ -82,7 +82,7 @@ public class MemberModifyService implements MemberRegister {
 
     private void checkDuplicateEmail(MemberRegisterRequest request) {
         if (memberRepository.findByEmail(new Email(request.email())).isPresent()) {
-            throw new DuplicateEmailException("이미 존재하는 이메일입니다.");
+            throw new DuplicateEmailException("이미 존재하는 이메일입니다: " + request.email());
         }
     }
 }

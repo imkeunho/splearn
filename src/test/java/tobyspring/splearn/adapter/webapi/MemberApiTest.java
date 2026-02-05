@@ -1,63 +1,90 @@
 package tobyspring.splearn.adapter.webapi;
 
 import lombok.RequiredArgsConstructor;
+import org.assertj.core.api.AssertProvider;
+import org.assertj.core.api.Assertions;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.json.JsonPathValueAssert;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
+import org.springframework.test.web.servlet.assertj.MvcTestResult;
+import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
+import org.springframework.transaction.annotation.Transactional;
+import tobyspring.splearn.adapter.webapi.dto.MemberRegisterResponse;
 import tobyspring.splearn.application.member.provided.MemberRegister;
+import tobyspring.splearn.application.member.required.MemberRepository;
 import tobyspring.splearn.domain.member.Member;
 import tobyspring.splearn.domain.member.MemberFixture;
 import tobyspring.splearn.domain.member.MemberRegisterRequest;
+import tobyspring.splearn.domain.member.MemberStatus;
 import tools.jackson.databind.ObjectMapper;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import java.io.UnsupportedEncodingException;
+import java.util.function.Consumer;
 
-@WebMvcTest(MemberApi.class)
+import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
+import static tobyspring.splearn.AssertThatUtils.equalsTo;
+import static tobyspring.splearn.AssertThatUtils.notNull;
+
+@SpringBootTest
+@AutoConfigureMockMvc
+@Transactional
 @RequiredArgsConstructor
-class MemberApiTest {
+public class MemberApiTest {
     final MockMvcTester mvcTester;
     final ObjectMapper objectMapper;
-
-    @MockitoBean
-    MemberRegister memberRegister;
+    final MemberRepository memberRepository;
+    final MemberRegister memberRegister;
 
     @Test
-    void register() {
+    void register() throws UnsupportedEncodingException {
         //given
-        Member member = MemberFixture.createMember(1L);
-        when(memberRegister.register(any())).thenReturn(member);
+        MemberRegisterRequest request = MemberFixture.createMemberRegisterRequest();
+        String requestJson = objectMapper.writeValueAsString(request);
+
+        //when
+        MvcTestResult result = mvcTester.post().uri("/api/members").contentType(MediaType.APPLICATION_JSON)
+                .content(requestJson).exchange();
+
+        //then
+        assertThat(result)
+                .hasStatusOk()
+                .bodyJson()
+                .hasPathSatisfying("$.memberId", notNull())
+                .hasPathSatisfying("$.email", equalsTo(request));
+
+        MemberRegisterResponse response =
+                objectMapper.readValue(result.getResponse().getContentAsString(), MemberRegisterResponse.class);
+        Member member = memberRepository.findById(response.memberId()).orElseThrow();
+
+        assertThat(member.getEmail().address()).isEqualTo(request.email());
+        assertThat(member.getNickname()).isEqualTo(request.nickname());
+        assertThat(member.getStatus()).isEqualTo(MemberStatus.PENDING);
+
+    }
+
+    @Test
+    void duplicateEmail() {
+        //given
+        memberRegister.register(MemberFixture.createMemberRegisterRequest());
 
         MemberRegisterRequest request = MemberFixture.createMemberRegisterRequest();
         String requestJson = objectMapper.writeValueAsString(request);
 
         //when
-        assertThat(mvcTester.post().uri("/api/members").contentType(MediaType.APPLICATION_JSON)
-                .content(requestJson))
-                .hasStatusOk()
-                .bodyJson()
-                .extractingPath("$.memberId").asNumber().isEqualTo(1);
+        MvcTestResult result = mvcTester.post().uri("/api/members").contentType(MediaType.APPLICATION_JSON)
+                .content(requestJson).exchange();
 
-        verify(memberRegister).register(request);
-    }
-
-    @Test
-    void registerFail() {
-        //given
-        MemberRegisterRequest request = MemberFixture.createMemberRegisterRequest("invalid email");
-        String requestJson = objectMapper.writeValueAsString(request);
-
-        //when
-        assertThat(mvcTester.post().uri("/api/members").contentType(MediaType.APPLICATION_JSON)
-                .content(requestJson))
-                .hasStatus(HttpStatus.BAD_REQUEST);
+        //then
+        assertThat(result)
+                .apply(print())
+                .hasStatus(HttpStatus.CONFLICT);
 
     }
 }
